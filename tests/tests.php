@@ -1,6 +1,6 @@
 <?php declare(strict_types = 1); // atom
 
-use function PHPToolBucket\Bucket\calleeClassScope;
+use function PHPToolBucket\Bucket\callerClassScope;
 
 //[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
 
@@ -8,118 +8,143 @@ require("../vendor/autoload.php");
 
 //[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
 
-$results = [calleeClassScope()];
-include_once(__DIR__ . "/global/file1.php");
-assert(count($results) === 5);
-assert(array_unique($results) === [NULL]);
-
-//[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
-
-class Rebound{}
-
-class Klass
-{
-    function method(){
-        $results = [calleeClassScope()];
-        include_once(__DIR__ . "/method_inclusions/file1.php");
-        return $results;
+function makeFile($code){
+    $fileName = sha1($code) . ".php";
+    $fileName = __DIR__ . "/" . $fileName;
+    if(file_exists($fileName) === FALSE){
+        file_put_contents($fileName, $code);
     }
-
-    static function staticMethod(){
-        $results = [calleeClassScope()];
-        include_once(__DIR__ . "/static_method_inclusions/file1.php");
-        return $results;
-    }
-
-    //[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
-
-    function closureInMethod(){
-        return (function(){
-            $results = [calleeClassScope()];
-            include_once(__DIR__ . "/closure_in_method_inclusions/file1.php");
-            return $results;
-        })();
-    }
-
-    static function closureInStaticMethod(){
-        return (function(){
-            $results = [calleeClassScope()];
-            include_once(__DIR__ . "/closure_in_static_method_inclusions/file1.php");
-            return $results;
-        })();
-    }
-
-    //[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
-
-    function reboundClosureInMethod(){
-        return (function(){
-            $results = [calleeClassScope()];
-            include_once(__DIR__ . "/rebound_closure_in_method_inclusions/file1.php");
-            return $results;
-        })->call(new Rebound());
-    }
-
-    static function reboundClosureInStaticMethod(){
-        return (function(){
-            $results = [calleeClassScope()];
-            include_once(__DIR__ . "/rebound_closure_in_static_method_inclusions/file1.php");
-            return $results;
-        })->call(new Rebound());
-    }
-
-    //[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
-
-    function staticClosureInMethod(){
-        return (static function(){
-            $results = [calleeClassScope()];
-            include_once(__DIR__ . "/unbound_closure_in_method_inclusions/file1.php");
-            return $results;
-        })();
-    }
-
-    static function staticClosureInStaticMethod(){
-        return (static function(){
-            $results = [calleeClassScope()];
-            include_once(__DIR__ . "/unbound_closure_in_static_method_inclusions/file1.php");
-            return $results;
-        })();
-    }
+    return $fileName;
 }
 
-$object = new Klass();
+function calledFromGlobalScope(){
+    assert(callerClassScope() === NULL);
 
-$inclusions = $object->method();
-assert(count($inclusions) === 5);
-assert(array_unique($inclusions) === [Klass::CLASS]);
+    //----------------------------------------------------------------------------------
 
-$inclusions = Klass::staticMethod();
-assert(count($inclusions) === 5);
-assert(array_unique($inclusions) === [Klass::CLASS]);
+    $f = makeFile('<?php
+        use function PHPToolBucket\\Bucket\\callerClassScope;
+        assert(callerClassScope() === NULL);
+    ');
 
-$inclusions = $object->closureInMethod();
-assert(count($inclusions) === 5);
-assert(array_unique($inclusions) === [Klass::CLASS]);
+    require($f);
 
-$inclusions = Klass::closureInStaticMethod();
-assert(count($inclusions) === 5);
-assert(array_unique($inclusions) === [Klass::CLASS]);
+    //----------------------------------------------------------------------------------
 
-$inclusions = $object->reboundClosureInMethod();
-assert(count($inclusions) === 5);
-assert(array_unique($inclusions) === [Rebound::CLASS]);
+    $f = makeFile('<?php
+        use function PHPToolBucket\\Bucket\\callerClassScope;
+        assert(callerClassScope() === NULL);
+    ');
 
-$inclusions = Klass::reboundClosureInStaticMethod();
-assert(count($inclusions) === 5);
-assert(array_unique($inclusions) === [Rebound::CLASS]);
+    $f = makeFile('<?php
+        require(' . var_export($f, TRUE) . ');
+    ');
 
-$inclusions = $object->staticClosureInMethod();
-assert(count($inclusions) === 5);
-assert(array_unique($inclusions) === [Klass::CLASS]);
+    require($f);
 
-$inclusions = Klass::staticClosureInStaticMethod();
-assert(count($inclusions) === 5);
-assert(array_unique($inclusions) === [Klass::CLASS]);
+    //----------------------------------------------------------------------------------
+
+    $f = makeFile('<?php
+        use function PHPToolBucket\\Bucket\\callerClassScope;
+        assert(callerClassScope() === NULL);
+    ');
+
+    $f = makeFile('<?php
+        require(' . var_export($f, TRUE) . ');
+    ');
+
+    $f = makeFile('<?php
+        require(' . var_export($f, TRUE) . ');
+    ');
+
+    require($f);
+}
 
 //[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
 
-echo "If you read this all tests did pass";
+class MyClass{}
+
+function calledFromClass(){
+    assert(callerClassScope() === MyClass::CLASS);
+
+    //----------------------------------------------------------------------------------
+
+    $f = makeFile('<?php
+        use function PHPToolBucket\\Bucket\\callerClassScope;
+        assert(callerClassScope() === MyClass::CLASS);
+    ');
+
+    require($f);
+
+    //----------------------------------------------------------------------------------
+
+    $f = makeFile('<?php
+        use function PHPToolBucket\\Bucket\\callerClassScope;
+        assert(callerClassScope() === MyClass::CLASS);
+    ');
+
+    $f = makeFile('<?php
+        require(' . var_export($f, TRUE) . ');
+    ');
+
+    require($f);
+
+    //----------------------------------------------------------------------------------
+
+    $f = makeFile('<?php
+        use function PHPToolBucket\\Bucket\\callerClassScope;
+        assert(callerClassScope() === MyClass::CLASS);
+    ');
+
+    $f = makeFile('<?php
+        require(' . var_export($f, TRUE) . ');
+    ');
+
+    $f = makeFile('<?php
+        require(' . var_export($f, TRUE) . ');
+    ');
+
+    require($f);
+}
+
+//[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
+
+try{
+    callerClassScope();
+}catch(Error $e){}
+assert(isset($e));
+
+//[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
+
+function callFromAGlobalFunctionEqualsToNoClassScope(){ calledFromGlobalScope(); }
+function callFromAGlobalFunctionEqualsToNoClassScope2(){ callFromAGlobalFunctionEqualsToNoClassScope(); }
+
+calledFromGlobalScope();
+
+(function(){ calledFromGlobalScope(); })();
+
+(function(){ (function(){ calledFromGlobalScope(); })(); })();
+
+callFromAGlobalFunctionEqualsToNoClassScope();
+
+callFromAGlobalFunctionEqualsToNoClassScope2();
+
+(function(){ callFromAGlobalFunctionEqualsToNoClassScope(); })->bindTo(NULL, MyClass::CLASS)();
+
+(function(){ callFromAGlobalFunctionEqualsToNoClassScope2(); })->bindTo(NULL, MyClass::CLASS)();
+
+(function(){ (function(){ callFromAGlobalFunctionEqualsToNoClassScope(); })(); })->bindTo(NULL, MyClass::CLASS)();
+
+(function(){ (function(){callFromAGlobalFunctionEqualsToNoClassScope2(); })(); })->bindTo(NULL, MyClass::CLASS)();
+
+//[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
+
+(function(){
+    calledFromClass();
+})->bindTo(NULL, MyClass::CLASS)();
+
+(function(){
+    (function(){
+        calledFromClass();
+    })();
+})->bindTo(NULL, MyClass::CLASS)();

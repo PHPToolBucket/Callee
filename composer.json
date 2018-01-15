@@ -14,7 +14,7 @@
     },
     "autoload": {
         "files": [
-            "src/calleeClassScope.inc.php"
+            "src/callerClassScope.inc.php"
         ]
     }
 }
