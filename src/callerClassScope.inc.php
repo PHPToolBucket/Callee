@@ -6,7 +6,6 @@ namespace PHPToolBucket\Bucket;
 
 use function debug_backtrace;
 use const DEBUG_BACKTRACE_IGNORE_ARGS;
-use Error;
 
 //[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
 
@@ -15,35 +14,13 @@ use Error;
  *
  * @throws
  *
- * @return          String|NULL                                                             `String|NULL`
- * Returns the class name of the calling scope.
+ * @param           Int                                     $depth                          `Int{NonNegative}`
+ * @TODOC
+ *
+ * @return          String|Int                                                              `String|NULL`
+ * Returns the class name of the calling scope, "public" if called from global scope,
+ * otherwise the amount of depth that is not available in the stacktrace.
  */
-function callerClassScope(): ?String{
-    $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-
-    if(count($trace) === 1){
-        throw new Error("This function cannot be called from the global scope");
-    }
-
-    $i = 1;
-
-    TEST:
-
-    if(isset($trace[$i]) === FALSE){
-        return NULL;
-    }
-
-    if(
-        isset($trace[$i]["class"]) === FALSE && (
-            $trace[$i]["function"] === "require" ||
-            $trace[$i]["function"] === "include" ||
-            $trace[$i]["function"] === "require_once" ||
-            $trace[$i]["function"] === "include_once"
-        )
-    ){
-        $i++;
-        goto TEST;
-    }
-
-    return $trace[++$i]["class"] ?? NULL;
+function callerClassScope(Int $depth = 0){
+    return __callerClassScopeInternal($depth, debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS));
 }
