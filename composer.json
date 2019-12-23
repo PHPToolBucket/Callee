@@ -1,21 +1,15 @@
 {
-    "name": "php-tool-bucket/callee",
-    "homepage": "https://github.com/PHPToolBucket/Callee",
+    "name": "php-tool-bucket/caller-info",
+    "homepage": "https://github.com/PHPToolBucket/CallerInfo",
     "license": "MIT",
-    "authors": [
-        {
-            "name": "Wes",
-            "homepage": "https://github.com/Netmosfera",
-            "role": "Smith"
-        }
-    ],
     "require": {
-        "php": ">=7.1 <8"
+        "php": ">=7.4 <8",
+        "phpunit/phpunit": ">=8 <9"
     },
     "autoload": {
         "files": [
-            "src/__callerClassScopeInternal.inc.php",
-            "src/callerClassScope.inc.php"
+            "src/_callerInfoInternal.inc.php",
+            "src/callerInfo.inc.php"
         ]
     }
 }

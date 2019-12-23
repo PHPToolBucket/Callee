@@ -1,4 +1,6 @@
+.idea
 vendor
-composer.lock
-phpunit.bat
 coverage
+phpunit.bat
+composer.phar
+.phpunit.result.cache
